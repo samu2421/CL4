@@ -1,0 +1,222 @@
+Assig 1
+
+from mrjob.job import MRJob
+from mrjob.step import MRStep
+import string
+
+class WordFrequency(MRJob):
+    uin = [word.strip().lower() for word in input("Enter words (Eg: a, b, c): ").lower().split(',')]
+    
+    def steps(self):
+        return [
+            MRStep(mapper=self.mapper_extract_words,
+                   reducer=self.reducer_count_frequency)
+        ]
+
+    def mapper_extract_words(self, _, text):
+        translator = str.maketrans('', '', string.punctuation)
+        text_without_punctuations = text.translate(translator)
+        
+
+        words_list = text_without_punctuations.split()
+
+        for word in words_list:
+            yield word.lower(), 1
+
+    def reducer_count_frequency(self, key, values):
+        if key in self.uin:
+            yield key, sum(values)
+
+if __name__ == "__main__":
+    WordFrequency.run()
+
+"""
+python Assig_1.py story.txt
+"""
+
+Assig 2
+
+from mrjob.job import MRJob
+from mrjob.step import MRStep
+import csv
+
+class CalculateGrades(MRJob):
+
+    def steps(self):
+        return [
+            MRStep(mapper=self.mapper,
+                   reducer=self.reducer)
+        ]
+
+    def mapper(self, _, line):
+        if line.startswith('id'):
+            return
+
+        reader = csv.reader([line])
+        for row in reader:
+            name, math, english = str(row[1]), int(row[2]), int(row[3])
+            total_marks = math + english
+            percentage = (total_marks / 200) * 100
+            yield None, {'name': name, 'percentage': percentage}
+
+    def reducer(self, key, values):
+        for student_info in values:
+            percentage = student_info['percentage']
+            grade = self.assign_grade(percentage)
+            yield student_info['name'], grade
+
+    def assign_grade(self, percentage):
+        if percentage < 40:
+            return 'Fail'
+        elif 40 <= percentage < 60:
+            return 'D'
+        elif 60 <= percentage < 70:
+            return 'C'
+        elif 70 <= percentage < 80:
+            return 'B'
+        elif 80 <= percentage < 90:
+            return 'A'
+        else:
+            return 'A+'
+
+
+if __name__ == "__main__":
+    CalculateGrades.run()
+
+"""
+python Assig_2.py marks.csv
+"""
+
+Assig 3
+
+from mrjob.job import MRJob
+from mrjob.step import MRStep
+import numpy as np
+
+class MatrixMultiplicationJob(MRJob):
+    
+    def steps(self):
+        return [
+            MRStep(mapper=self.mapper,
+                   reducer=self.reducer)
+        ]
+
+    def mapper(self, _, line):
+        matrix_strs = line.split(' ')
+        matrix1 = list(eval(matrix_strs[0]))
+        matrix2 = list(eval(matrix_strs[1]))
+        yield f'Product of {matrix1} and {matrix2}: ', [matrix1, matrix2]
+
+    def reducer(self, key, values):
+        values_list = list(values)
+        result_matrix = self.matrix_multiply(
+            values_list[0][0], values_list[0][1])
+        
+        yield key, result_matrix
+
+    def matrix_multiply(self, matrix1, matrix2):
+        result_matrix = []
+        for i in range(len(matrix1)):
+            row = []
+            for j in range(len(matrix2[0])):
+                sum_val = 0
+                for k in range(len(matrix2)):
+                    sum_val += matrix1[i][k] * matrix2[k][j]
+                row.append(sum_val)
+            result_matrix.append(row)
+        return result_matrix
+
+
+if __name__ == '__main__':
+    MatrixMultiplicationJob.run()
+
+Assig 4
+
+1) CREATING 
+
+use student
+db.createCollection("students")
+show dbs
+show databases
+
+2) INSERTING
+
+db.student.insertOne({
+    "studentname": "John Doe",
+    "id": 123456,
+    "city": "New York",
+    "marks": {
+        "maths": 90,
+        "science": 85,
+        "history": 75
+    }
+})
+
+db.student.insertMany([
+    {
+        "studentname": "Jane Smith",
+        "id": 789012,
+        "city": "Los Angeles",
+        "marks": {
+            "maths": 85,
+            "science": 88,
+            "history": 92
+        }
+    },
+    {
+        "studentname": "Alice Johnson",
+        "id": 345678,
+        "city": "Chicago",
+        "marks": {
+            "maths": 95,
+            "science": 90,
+            "history": 87
+        }
+    }
+])
+
+3) DISPLAY DATA
+
+db.student.find()
+db.student.find().pretty()
+db.student.find({ "id": 123456 })
+
+
+4) QUERYING 
+
+db.student.find({ "studentname": "John" })
+db.student.find({ "city": "New York" })
+db.student.aggregate([
+    {
+        $project: {
+            studentname: 1,
+            totalMarks: { $add: ["$marks.maths", "$marks.science", "$marks.history"] }
+        }
+    }
+])
+
+
+5) UPDATION
+
+db.student.updateOne(
+   { "studentname": "John Doe" },
+   { $set: { "id": new_id } }
+)
+
+db.student.updateOne(
+   { "studentname": "Alice Johnson" }, // Filter criteria
+   { $set: { "city": "New City" } }   // Update operation
+)
+
+db.student.updateMany(
+   { "city": "New York" },             // Filter criteria
+   { $set: { "city": "Big Apple" } }   // Update operation
+)
+
+6) DELETION
+
+db.student.deleteOne({ "studentname": "Alice Johnson" })
+db.student.deleteMany({ "city": "New York" })
+
+
+
