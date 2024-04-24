@@ -130,6 +130,9 @@ class MatrixMultiplicationJob(MRJob):
 if __name__ == '__main__':
     MatrixMultiplicationJob.run()
 
+"python Assig_3.py mats.txt"
+
+
 Assig 4
 
 1) CREATING 
